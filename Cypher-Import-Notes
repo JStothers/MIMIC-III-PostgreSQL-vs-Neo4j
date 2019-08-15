@@ -1,147 +1,274 @@
-// ---Install Apoch---
+// Instructions to create a Neo4j MIMIC-III database. Operation times cited are approximations and will vary
+// between machines. The dataset must first be downloaded from the MIMIC-III Critical Care Database and placed in your
+// Neo4j project import folder.
+// https://mimic.physionet.org/about/mimic/
 
-// Apoch is a library of procedures and functions for Neo4j. They are implemented in Java and can be called from Cypher directly.
+// ---Install APOC---
+
+// APOC is a library of procedures and functions for Neo4j. They are implemented in Java and can be called from Cypher directly.
 // https://neo4j-contrib.github.io/neo4j-apoc-procedures/3.5/
-// To install in Neo4j Desktop after creating the database, go to the "Manage" screen and the "Plugins" tab. Then click "Install" in the APOC box.
+// To install APOC in Neo4j Desktop after creating the database, go to the "Manage" screen and the "Plugins" tab. 
+// Then click "Install" in the APOC box.
 
-// Neo4j Import CSV:
-// Create labels for each csv file and nodes for each column. Change the datatype to integer, float or datetime when appropriate. Convert the csv datetime into ISO 8601 datetime format that is compliant with cypher. Create a new label for neo4j import time. Use periodic commit to avoid overloading the computer memory for commands with long processing time.
-// https://community.neo4j.com/t/datetime-issue-import-data-from-sql-server/1400/6
+// ---Neo4j Import CSV---
+// Create labels for each CSV file and nodes for each column. Change the datatype to integer, float or datetime 
+// when appropriate. Convert the CSV datetime into ISO 8601 datetime format that is compliant with Cypher. 
+// Create a new label for Neo4j import time. Use periodic commit to avoid overloading the computer memory.
+// Datetime formatting fix found at: https://community.neo4j.com/t/datetime-issue-import-data-from-sql-server/1400/6
 
 // 1244 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///ADMISSIONS.csv' AS line
-CREATE (:Admissions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), admittime: datetime( REPLACE(line.ADMITTIME, ' ', 'T')), dischtime: datetime( REPLACE(line.DISCHTIME, ' ', 'T')), deathtime: datetime( REPLACE(line.DEATHTIME, ' ', 'T')), admission_type: line.ADMISSION_TYPE, admission_location: line.ADMISSION_LOCATION, discharge_location: line.DISCHARGE_LOCATION, insurance: line.INSURANCE, language: line.LANGUAGE, religion: line.RELIGION, marital_status: line.MARITAL_STATUS, ethnicity: line.ETHNICITY, edregtime: datetime( REPLACE(line.EDREGTIME, ' ', 'T')), edouttime: datetime( REPLACE(line.EDOUTTIME, ' ', 'T')), diagnosis: line.DIAGNOSIS, hospital_expire_flag: toInteger(line.HOSPITAL_EXPIRE_FLAG), has_chartevents_data: toInteger(line.HAS_CHARTEVENTS_DATA), neo4j_import_time: datetime()});
+CREATE (:Admissions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), admittime: datetime( REPLACE(line.ADMITTIME, ' ', 'T')), 
+	dischtime: datetime( REPLACE(line.DISCHTIME, ' ', 'T')), deathtime: datetime( REPLACE(line.DEATHTIME, ' ', 'T')), 
+	admission_type: line.ADMISSION_TYPE, admission_location: line.ADMISSION_LOCATION, 
+	discharge_location: line.DISCHARGE_LOCATION, insurance: line.INSURANCE, language: line.LANGUAGE, 
+	religion: line.RELIGION, marital_status: line.MARITAL_STATUS, ethnicity: line.ETHNICITY, 
+	edregtime: datetime( REPLACE(line.EDREGTIME, ' ', 'T')), edouttime: datetime( REPLACE(line.EDOUTTIME, ' ', 'T')), 
+	diagnosis: line.DIAGNOSIS, hospital_expire_flag: toInteger(line.HOSPITAL_EXPIRE_FLAG), 
+	has_chartevents_data: toInteger(line.HAS_CHARTEVENTS_DATA), neo4j_import_time: datetime()});
 
 // 503 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///CALLOUT.csv' AS line
-CREATE (:Callout { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), submit_wardid: toInteger(line.SUBMIT_WARDID), submit_careunit: line.SUBMIT_CAREUNIT, curr_wardid: toInteger(line.CURR_WARDID), curr_careunit: line.CURR_CAREUNIT, callout_wardid: toInteger(line.CALLOUT_WARDID), callout_service: line.CALLOUT_SERVICE, request_tele: toInteger(line.REQUEST_TELE), request_resp: toInteger(line.REQUEST_RESP), request_cdiff: toInteger(line.REQUEST_CDIFF), request_mrsa: toInteger(line.REQUEST_MRSA), request_vre: toInteger(line.REQUEST_VRE), callout_status: line.CALLOUT_STATUS, callout_outcome: line.CALLOUT_OUTCOME, discharge_wardid: toInteger(line.DISCHARGE_WARDID), acknowledge_status: line.ACKNOWLEDGE_STATUS, createtime: datetime( REPLACE(line.CREATETIME, ' ', 'T')), updatetime: datetime( REPLACE(line.UPDATETIME, ' ', 'T')), acknowledgetime: ( REPLACE(line.ACKNOWLEDGETIME, ' ', 'T')), outcometime: datetime( REPLACE(line.OUTCOMETIME, ' ', 'T')), firstreservationtime: datetime( REPLACE(line.FIRSTRESERVATIONTIME, ' ', 'T')), currentreservationtime: datetime( REPLACE(line.CURRENTRESERVATIONTIME, ' ', 'T')), neo4j_import_time: datetime()});
+CREATE (:Callout { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), submit_wardid: toInteger(line.SUBMIT_WARDID), submit_careunit: line.SUBMIT_CAREUNIT, 
+	curr_wardid: toInteger(line.CURR_WARDID), curr_careunit: line.CURR_CAREUNIT, 
+	callout_wardid: toInteger(line.CALLOUT_WARDID), callout_service: line.CALLOUT_SERVICE, 
+	request_tele: toInteger(line.REQUEST_TELE), request_resp: toInteger(line.REQUEST_RESP), 
+	request_cdiff: toInteger(line.REQUEST_CDIFF), request_mrsa: toInteger(line.REQUEST_MRSA), 
+	request_vre: toInteger(line.REQUEST_VRE), callout_status: line.CALLOUT_STATUS, callout_outcome: line.CALLOUT_OUTCOME, 
+	discharge_wardid: toInteger(line.DISCHARGE_WARDID), acknowledge_status: line.ACKNOWLEDGE_STATUS, 
+	createtime: datetime( REPLACE(line.CREATETIME, ' ', 'T')), updatetime: datetime( REPLACE(line.UPDATETIME, ' ', 'T')), 
+	acknowledgetime: ( REPLACE(line.ACKNOWLEDGETIME, ' ', 'T')), outcometime: datetime( REPLACE(line.OUTCOMETIME, ' ', 'T')), 
+	firstreservationtime: datetime( REPLACE(line.FIRSTRESERVATIONTIME, ' ', 'T')), 
+	currentreservationtime: datetime( REPLACE(line.CURRENTRESERVATIONTIME, ' ', 'T')), neo4j_import_time: datetime()});
 
 // 1167 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///CAREGIVERS.csv' AS line
-CREATE (:Caregivers { row_id: toInteger(line.ROW_ID), cgid: toInteger(line.CGID), label: line.LABEL, description: line.DESCRIPTION, neo4j_import_time: datetime()});
+CREATE (:Caregivers { row_id: toInteger(line.ROW_ID), cgid: toInteger(line.CGID), label: line.LABEL, 
+	description: line.DESCRIPTION, neo4j_import_time: datetime()});
 
 // 37915 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///CHARTEVENTS.csv' AS line
-CREATE (:Chart_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), value: line.VALUE, valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, stopped: line.STOPPED, neo4j_import_time: datetime()});
+CREATE (:Chart_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), 
+	cgid: toInteger(line.CGID), value: line.VALUE, valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, 
+	warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, 
+	stopped: line.STOPPED, neo4j_import_time: datetime()});
 
 // 142 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///CPTEVENTS.csv' AS line
-CREATE (:CPT_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), costcenter: line.COSTCENTER, chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), cpt_cd: line.CPT_CD, cpt_number: toInteger(line.CPT_NUMBER), cpt_suffix: line.CPT_SUFFIX, ticket_id_seq: toInteger(line.TICKET_ID_SEQ), sectionheader: line.SECTIONHEADER, subsectionheader: line.SUBSECTIONHEADER, description: line.DESCRIPTION, neo4j_import_time: datetime()});
+CREATE (:CPT_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), costcenter: line.COSTCENTER, 
+	chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), cpt_cd: line.CPT_CD, 
+	cpt_number: toInteger(line.CPT_NUMBER), cpt_suffix: line.CPT_SUFFIX, ticket_id_seq: toInteger(line.TICKET_ID_SEQ), 
+	sectionheader: line.SECTIONHEADER, subsectionheader: line.SUBSECTIONHEADER, description: line.DESCRIPTION, 
+	neo4j_import_time: datetime()});
 
 // 43 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///D_CPT.csv' AS line
-CREATE (:D_CPT { row_id: toInteger(line.ROW_ID), category: toInteger(line.CATEGORY), sectionrange: line.SECTIONRANGE, sectionheader: line.SECTIONHEADER, subsectionrange: line.SUBSECTIONRANGE, subsectionheader: line.SUBSECTIONHEADER, codesuffix: line.CODESUFFIX, mincodeinsubsection: toInteger(line.MINCODEINSUBSECTION), maxcodeinsubsection: toInteger(line.MAXCODEINSUBSECTION), neo4j_import_time: datetime()});
+CREATE (:D_CPT { row_id: toInteger(line.ROW_ID), category: toInteger(line.CATEGORY), sectionrange: line.SECTIONRANGE, 
+	sectionheader: line.SECTIONHEADER, subsectionrange: line.SUBSECTIONRANGE, subsectionheader: line.SUBSECTIONHEADER, 
+	codesuffix: line.CODESUFFIX, mincodeinsubsection: toInteger(line.MINCODEINSUBSECTION), 
+	maxcodeinsubsection: toInteger(line.MAXCODEINSUBSECTION), neo4j_import_time: datetime()});
 
 // 553 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///D_ICD_DIAGNOSES.csv' AS line
-CREATE (:D_ICD_Diagnoses { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
+CREATE (:D_ICD_Diagnoses { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, 
+	long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
 
 // 125 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///D_ICD_PROCEDURES.csv' AS line
-CREATE (:D_ICD_Procedures { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
+CREATE (:D_ICD_Procedures { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, 
+	long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
 
 // 513 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///D_ITEMS.csv' AS line
-CREATE (:D_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, abbreviation: line.ABBREVIATION, dbsource: line.DBSOURCE, linksto: line.LINKSTO, category: line.CATEGORY, unitname: line.UNITNAME, param_type: line.PARAM_TYPE, conceptid: toInteger(line.CONCEPTID), neo4j_import_time: datetime()});
+CREATE (:D_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, 
+	abbreviation: line.ABBREVIATION, dbsource: line.DBSOURCE, linksto: line.LINKSTO, category: line.CATEGORY, 
+	unitname: line.UNITNAME, param_type: line.PARAM_TYPE, conceptid: toInteger(line.CONCEPTID), 
+	neo4j_import_time: datetime()});
 
 // 32 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///D_LABITEMS.csv' AS line
-CREATE (:D_Lab_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, fluid: line.FLUID, category: line.CATEGORY, loinc_code: line.LOINC_CODE, neo4j_import_time: datetime()});
+CREATE (:D_Lab_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, 
+	fluid: line.FLUID, category: line.CATEGORY, loinc_code: line.LOINC_CODE, neo4j_import_time: datetime()});
 
 // 1031 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///DATETIMEEVENTS.csv' AS line
-CREATE (:Datetime_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), value: datetime( REPLACE(line.VALUE, ' ', 'T')), valueuom: line.VALUEUOM, warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, stopped: line.STOPPED, neo4j_import_time: datetime()});
+CREATE (:Datetime_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), 
+	cgid: toInteger(line.CGID), value: datetime( REPLACE(line.VALUE, ' ', 'T')), valueuom: line.VALUEUOM, 
+	warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, 
+	stopped: line.STOPPED, neo4j_import_time: datetime()});
 
 // 56 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///DIAGNOSES_ICD.csv' AS line
-CREATE (:Diagnoses_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, neo4j_import_time: datetime()});
+CREATE (:Diagnoses_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, 
+	neo4j_import_time: datetime()});
 
 // 43 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///DRGCODES.csv' AS line
-CREATE (:DRG_Codes { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), drg_type: line.DRG_TYPE, drg_code: line.DRG_CODE, description: line.DESCRIPTION, drg_severity: toInteger(line.DRG_SEVERITY), drg_mortality: toInteger(line.DRG_MORTALITY), neo4j_import_time: datetime()});
+CREATE (:DRG_Codes { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), 
+	drg_type: line.DRG_TYPE, drg_code: line.DRG_CODE, description: line.DESCRIPTION, 
+	drg_severity: toInteger(line.DRG_SEVERITY), drg_mortality: toInteger(line.DRG_MORTALITY), 
+	neo4j_import_time: datetime()});
 
 // 52 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///ICUSTAYS.csv' AS line
-CREATE (:ICU_Stays { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, first_careunit: line.FIRST_CAREUNIT, last_careunit: line.LAST_CAREUNIT, first_wardid: toInteger(line.FIRST_WARDID), last_wardid: toInteger(line.LAST_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
+CREATE (:ICU_Stays { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), 
+	icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, first_careunit: line.FIRST_CAREUNIT, 
+	last_careunit: line.LAST_CAREUNIT, first_wardid: toInteger(line.FIRST_WARDID), 
+	last_wardid: toInteger(line.LAST_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), 
+	outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
 
 // 2245 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///INPUTEVENTS_CV.csv' AS line
-CREATE (:Input_Events_CV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), rateuom: line.RATEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), stopped: line.STOPPED, newbottle: toInteger(line.NEWBOTTLE), originalamount: toFloat(line.ORIGINALAMOUNT), originalamountuom: line.ORIGINALAMOUNTUOM, originalroute: line.ORIGINALROUTE, originalrate: toFloat(line.ORIGINALRATE), originalrateuom: line.ORIGINALRATEUOM, originalsite: line.ORIGINALSITE, neo4j_import_time: datetime()});
+CREATE (:Input_Events_CV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), 
+	amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), rateuom: line.RATEUOM, 
+	storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), 
+	linkorderid: toInteger(line.LINKORDERID), stopped: line.STOPPED, newbottle: toInteger(line.NEWBOTTLE), 
+	originalamount: toFloat(line.ORIGINALAMOUNT), originalamountuom: line.ORIGINALAMOUNTUOM, 
+	originalroute: line.ORIGINALROUTE, originalrate: toFloat(line.ORIGINALRATE), originalrateuom: line.ORIGINALRATEUOM, 
+	originalsite: line.ORIGINALSITE, neo4j_import_time: datetime()});
 
 // 1573 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///INPUTEVENTS_MV.csv' AS line
-CREATE (:Input_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), rateuom: line.RATEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), ordercategoryname: line.ORDERCATEGORYNAME, secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, ordercomponenttypedescription: line.ORDERCOMPONENTTYPEDESCRIPTION, ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, patientweight: toFloat(line.PATIENTWEIGHT), totalamount: toFloat(line.TOTALAMOUNT), totalamountuom: line.TOTALAMOUNTUOM, isopenbag: toInteger(line.ISOPENBAG), continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: datetime( REPLACE(line.COMMENTS_DATE, ' ', 'T')), originalamount: toFloat(line.ORIGINALAMOUNT), originalrate: toFloat(line.ORIGINALRATE), neo4j_import_time: datetime()});
+CREATE (:Input_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), 
+	starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), 
+	itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), 
+	rateuom: line.RATEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), 
+	orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), ordercategoryname: line.ORDERCATEGORYNAME, 
+	secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, 
+	ordercomponenttypedescription: line.ORDERCOMPONENTTYPEDESCRIPTION, 
+	ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, patientweight: toFloat(line.PATIENTWEIGHT), 
+	totalamount: toFloat(line.TOTALAMOUNT), totalamountuom: line.TOTALAMOUNTUOM, isopenbag: toInteger(line.ISOPENBAG), 
+	continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), 
+	statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, 
+	comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: datetime( REPLACE(line.COMMENTS_DATE, ' ', 'T')), 
+	originalamount: toFloat(line.ORIGINALAMOUNT), originalrate: toFloat(line.ORIGINALRATE), neo4j_import_time: datetime()});
 
 // 2662 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///LABEVENTS.csv' AS line
-CREATE (:Lab_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), value: line.VALUE, valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, flag: line.FLAG, neo4j_import_time: datetime()});
+CREATE (:Lab_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), 
+	itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), value: line.VALUE, 
+	valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, flag: line.FLAG, neo4j_import_time: datetime()});
 
 // 188 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///MICROBIOLOGYEVENTS.csv' AS line
-CREATE (:Microbiology_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), spec_itemid: line.SPEC_ITEMID, spec_type_desc: line.SPEC_TYPE_DESC, org_itemid: toInteger(line.ORG_ITEMID), org_name: line.ORG_NAME, isolate_num: toInteger(line.ISOLATE_NUM), ab_itemid: toInteger(line.AB_ITEMID), ab_name: line.AB_NAME, dilution_text: line.DILUTION_TEXT, dilution_comparison: line.DILUTION_COMPARISON, dilution_value: toFloat(line.DILUTION_VALUE), interpretation: line.INTERPRETATION});
+CREATE (:Microbiology_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), spec_itemid: line.SPEC_ITEMID, 
+	spec_type_desc: line.SPEC_TYPE_DESC, org_itemid: toInteger(line.ORG_ITEMID), org_name: line.ORG_NAME, 
+	isolate_num: toInteger(line.ISOLATE_NUM), ab_itemid: toInteger(line.AB_ITEMID), ab_name: line.AB_NAME, 
+	dilution_text: line.DILUTION_TEXT, dilution_comparison: line.DILUTION_COMPARISON, 
+	dilution_value: toFloat(line.DILUTION_VALUE), interpretation: line.INTERPRETATION});
 
-// ----error in csv-----
+// ----CSV ERROR IN SAMPLE DATA-----
 
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///NOTEEVENTS.csv' AS line
-CREATE (:Note_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), category: line.CATEGORY, description: line.DESCRIPTION, cgid: toInteger(line.CGID), iserror: line.ISERROR, text: line.TEXT, neo4j_import_time: datetime()});
+CREATE (:Note_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), 
+	category: line.CATEGORY, description: line.DESCRIPTION, cgid: toInteger(line.CGID), iserror: line.ISERROR, 
+	text: line.TEXT, neo4j_import_time: datetime()});
 
 //
 
 // 713 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///OUTPUTEVENTS.csv' AS line
-CREATE (:Output_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), value: toFloat(line.VALUE), valueuom: line.VALUEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), stopped: line.STOPPED, newbottle: line.NEWBOTTLE, iserror: toInteger(line.ISERROR), neo4j_import_time: datetime()});
+CREATE (:Output_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), 
+	charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), 
+	value: toFloat(line.VALUE), valueuom: line.VALUEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), 
+	cgid: toInteger(line.CGID), stopped: line.STOPPED, newbottle: line.NEWBOTTLE, iserror: toInteger(line.ISERROR), 
+	neo4j_import_time: datetime()});
 
 // 23 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///PATIENTS.csv' AS line
-CREATE (:Patients { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), gender: line.GENDER, dob: datetime( REPLACE(line.DOB, ' ', 'T')), dod: datetime( REPLACE(line.DOD, ' ', 'T')), dod_hosp: datetime( REPLACE(line.DOD_HOS, ' ', 'T')), dod_ssn: datetime( REPLACE(line.DOD_SSN, ' ', 'T')), expire_flag: toInteger(line.EXPIRE_FLAG)});
+CREATE (:Patients { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), gender: line.GENDER, 
+	dob: datetime( REPLACE(line.DOB, ' ', 'T')), dod: datetime( REPLACE(line.DOD, ' ', 'T')), 
+	dod_hosp: datetime( REPLACE(line.DOD_HOS, ' ', 'T')), dod_ssn: datetime( REPLACE(line.DOD_SSN, ' ', 'T')), 
+	expire_flag: toInteger(line.EXPIRE_FLAG)});
 
 // 842 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///PRESCRIPTIONS.csv' AS line
-CREATE (:Prescriptions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), startdate: datetime( REPLACE(line.STARTDATE, ' ', 'T')), enddate: datetime( REPLACE(line.ENDDATE, ' ', 'T')), drug_type: line.DRUG_TYPE, drug: line.DRUG, drug_name_poe: line.DRUG_NAME_POE, drug_name_generic: line.DRUG_NAME_GENERIC, formulary_drug_cd: line.FORMULARY_DRUG_CD, gsn: line.GSN, ndc: line.NDC, prod_strength: line.PROD_STRENGTH, dose_val_rx: line.DOSE_VAL_RX, dose_unit_rx: line.DOSE_UNIT_RX, form_val_disp: line.FORM_VAL_DISP, form_unit_disp: line.FORM_UNIT_DISP, route: line.ROUTE, neo4j_import_time: datetime()});
+CREATE (:Prescriptions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), 
+	startdate: datetime( REPLACE(line.STARTDATE, ' ', 'T')), enddate: datetime( REPLACE(line.ENDDATE, ' ', 'T')), 
+	drug_type: line.DRUG_TYPE, drug: line.DRUG, drug_name_poe: line.DRUG_NAME_POE, 
+	drug_name_generic: line.DRUG_NAME_GENERIC, formulary_drug_cd: line.FORMULARY_DRUG_CD, gsn: line.GSN, 
+	ndc: line.NDC, prod_strength: line.PROD_STRENGTH, dose_val_rx: line.DOSE_VAL_RX, dose_unit_rx: line.DOSE_UNIT_RX, 
+	form_val_disp: line.FORM_VAL_DISP, form_unit_disp: line.FORM_UNIT_DISP, route: line.ROUTE, 
+	neo4j_import_time: datetime()});
 
 // 148 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///PROCEDUREEVENTS_MV.csv' AS line
-CREATE (:Procedure_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), value: toFloat(line.VALUE), valueuom: line.VALUEUOM, location: line.LOCATION, locationcategory: line.LOCATIONCATEGORY, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), ordercategoryname: line.ORDERCATEGORYNAME, secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, isopenbag: toInteger(line.ISOPENBAG), continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: line.COMMENTS_DATE, neo4j_import_time: datetime()});
+CREATE (:Procedure_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), 
+	starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), 
+	itemid: toInteger(line.ITEMID), value: toFloat(line.VALUE), valueuom: line.VALUEUOM, location: line.LOCATION, 
+	locationcategory: line.LOCATIONCATEGORY, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), 
+	cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), 
+	ordercategoryname: line.ORDERCATEGORYNAME, secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, 
+	ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, isopenbag: toInteger(line.ISOPENBAG), 
+	continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), 
+	statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, 
+	comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: line.COMMENTS_DATE, neo4j_import_time: datetime()});
 
 // 23 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///PROCEDURES_ICD.csv' AS line
-CREATE (:Procedures_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, neo4j_import_time: datetime()});
+CREATE (:Procedures_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), 
+	hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, 
+	neo4j_import_time: datetime()});
 
 // 27 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///SERVICES.csv' AS line
-CREATE (:Services { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), transfertime: datetime( REPLACE(line.TRANSFERTIME, ' ', 'T')), prev_service: line.PREV_SERVICE, curr_service: line.CURR_SERVICE, neo4j_import_time: datetime()});
+CREATE (:Services { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), 
+	transfertime: datetime( REPLACE(line.TRANSFERTIME, ' ', 'T')), prev_service: line.PREV_SERVICE, 
+	curr_service: line.CURR_SERVICE, neo4j_import_time: datetime()});
 
 // 104 ms
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///TRANSFERS.csv' AS line
-CREATE (:Transfers { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, eventtype: line.EVENTTYPE, prev_careunit: line.PREV_CAREUNIT, curr_careunit: line.CURR_CAREUNIT, prev_wardid: toInteger(line.PREV_WARDID), curr_wardid: toInteger(line.CURR_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
+CREATE (:Transfers { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), 
+	icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, eventtype: line.EVENTTYPE, 
+	prev_careunit: line.PREV_CAREUNIT, curr_careunit: line.CURR_CAREUNIT, prev_wardid: toInteger(line.PREV_WARDID), 
+	curr_wardid: toInteger(line.CURR_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), 
+	outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
 
-// ----- CREATE INDEXES------
+// --- CREATE INDEXES---
 
 CREATE INDEX ON :Admissions(subject_id); // 28 ms
 CREATE INDEX ON :Admissions(hadm_id); // 3 ms
@@ -202,7 +329,7 @@ CREATE INDEX ON :Lab_Events(itemid); // 1 ms
 CREATE INDEX ON :Microbiology_Events(subject_id); // 1 ms
 CREATE INDEX ON :Microbiology_Events(hadm_id); // 2 ms
 
-// ---CSV ERROR-----
+// ---CSV ERROR IN SAMPLE DATA-----
 
 CREATE INDEX ON :Note_Events(subject_id);
 CREATE INDEX ON :Note_Events(hadm_id);
@@ -237,8 +364,7 @@ CREATE INDEX ON :Transfers(subject_id); // 3 ms
 CREATE INDEX ON :Transfers(icustay_id); // 2 ms
 CREATE INDEX ON :Transfers(hadm_id); // 3 ms
 
-// ------Create Relationships---------
-// https://stackoverflow.com/questions/39765174/creating-relationships-between-nodes-with-same-properties
+// ---Create Relationships---
 
 // Admissions
 
@@ -930,7 +1056,7 @@ RETURN pat, tra",
 "MERGE(pat)-[r:ShareSubjectID]-(tra)
 RETURN pat, r, tra", {batchSize:1000, parallel:true});
 
-// Modified Database Extra Steps
+// ---Modified Database Extra Steps---
 
 // Create relationship between Admissions and D_ICD_Diagnoses, removing the necessity for the join table Diagnoses_ICD
 // 8948044 ms
