@@ -1,1 +1,52 @@
+// Database metadata *no direct comparison existed between SQL and Cypher
+
+// SQL
+// Clauses: 1
+\d+ MIMICIII.ADMISSIONS;
+
+// Cypher (unmodified db)
+// Clauses: 8
+// Runtime: 6300 ms
+CALL apoc.meta.schema() YIELD value as schemaMap
+UNWIND keys(schemaMap) as label
+WITH label, schemaMap[label] as data
+WHERE data.type = "node"
+UNWIND keys(data.properties) as property
+WITH label, property, data.properties[property] as propData
+RETURN label, property, propData.type as type, propData.indexed as isIndexed,
+propData.unique as uniqueConstraint, propData.existence as existenceConstraint;
+
+// Cypher (modified db)
+// Clauses: 8
+// Runtime: 4295 ms
+CALL apoc.meta.schema() YIELD value as schemaMap
+UNWIND keys(schemaMap) as label
+WITH label, schemaMap[label] as data
+WHERE data.type = "node"
+UNWIND keys(data.properties) as property
+WITH label, property, data.properties[property] as propData
+RETURN label, property, propData.type as type, propData.indexed as isIndexed,
+propData.unique as uniqueConstraint, propData.existence as existenceConstraint;
+
+// Return nodes with Patients label
+
+// SQL
+// Clauses: 2
+// Runtime: 132 ms
+SELECT *
+FROM patients;
+
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 19 ms
+MATCH (pat:Patients)
+RETURN pat;
+
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 20 ms
+MATCH (pat:Patients)
+RETURN pat;
 
