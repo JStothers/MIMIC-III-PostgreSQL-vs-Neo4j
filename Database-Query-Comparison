@@ -843,6 +843,9 @@ CASE
         ELSE 'N'
         END AS icustay_expire_flag;
 
+// The following queries demonstrate the differences between the two Cypher databases caused by the lack of join tables
+// in the modified database
+
 // Show Patient 129273’s  diagnosis
 
 // SQL
