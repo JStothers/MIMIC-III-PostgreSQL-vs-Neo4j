@@ -1,0 +1,976 @@
+// ---Install Apoch---
+
+// Apoch is a library of procedures and functions for Neo4j. They are implemented in Java and can be called from Cypher directly.
+// https://neo4j-contrib.github.io/neo4j-apoc-procedures/3.5/
+// To install in Neo4j Desktop after creating the database, go to the "Manage" screen and the "Plugins" tab. Then click "Install" in the APOC box.
+
+// Neo4j Import CSV:
+// Create labels for each csv file and nodes for each column. Change the datatype to integer, float or datetime when appropriate. Convert the csv datetime into ISO 8601 datetime format that is compliant with cypher. Create a new label for neo4j import time. Use periodic commit to avoid overloading the computer memory for commands with long processing time.
+// https://community.neo4j.com/t/datetime-issue-import-data-from-sql-server/1400/6
+
+// 1244 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///ADMISSIONS.csv' AS line
+CREATE (:Admissions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), admittime: datetime( REPLACE(line.ADMITTIME, ' ', 'T')), dischtime: datetime( REPLACE(line.DISCHTIME, ' ', 'T')), deathtime: datetime( REPLACE(line.DEATHTIME, ' ', 'T')), admission_type: line.ADMISSION_TYPE, admission_location: line.ADMISSION_LOCATION, discharge_location: line.DISCHARGE_LOCATION, insurance: line.INSURANCE, language: line.LANGUAGE, religion: line.RELIGION, marital_status: line.MARITAL_STATUS, ethnicity: line.ETHNICITY, edregtime: datetime( REPLACE(line.EDREGTIME, ' ', 'T')), edouttime: datetime( REPLACE(line.EDOUTTIME, ' ', 'T')), diagnosis: line.DIAGNOSIS, hospital_expire_flag: toInteger(line.HOSPITAL_EXPIRE_FLAG), has_chartevents_data: toInteger(line.HAS_CHARTEVENTS_DATA), neo4j_import_time: datetime()});
+
+// 503 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///CALLOUT.csv' AS line
+CREATE (:Callout { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), submit_wardid: toInteger(line.SUBMIT_WARDID), submit_careunit: line.SUBMIT_CAREUNIT, curr_wardid: toInteger(line.CURR_WARDID), curr_careunit: line.CURR_CAREUNIT, callout_wardid: toInteger(line.CALLOUT_WARDID), callout_service: line.CALLOUT_SERVICE, request_tele: toInteger(line.REQUEST_TELE), request_resp: toInteger(line.REQUEST_RESP), request_cdiff: toInteger(line.REQUEST_CDIFF), request_mrsa: toInteger(line.REQUEST_MRSA), request_vre: toInteger(line.REQUEST_VRE), callout_status: line.CALLOUT_STATUS, callout_outcome: line.CALLOUT_OUTCOME, discharge_wardid: toInteger(line.DISCHARGE_WARDID), acknowledge_status: line.ACKNOWLEDGE_STATUS, createtime: datetime( REPLACE(line.CREATETIME, ' ', 'T')), updatetime: datetime( REPLACE(line.UPDATETIME, ' ', 'T')), acknowledgetime: ( REPLACE(line.ACKNOWLEDGETIME, ' ', 'T')), outcometime: datetime( REPLACE(line.OUTCOMETIME, ' ', 'T')), firstreservationtime: datetime( REPLACE(line.FIRSTRESERVATIONTIME, ' ', 'T')), currentreservationtime: datetime( REPLACE(line.CURRENTRESERVATIONTIME, ' ', 'T')), neo4j_import_time: datetime()});
+
+// 1167 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///CAREGIVERS.csv' AS line
+CREATE (:Caregivers { row_id: toInteger(line.ROW_ID), cgid: toInteger(line.CGID), label: line.LABEL, description: line.DESCRIPTION, neo4j_import_time: datetime()});
+
+// 37915 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///CHARTEVENTS.csv' AS line
+CREATE (:Chart_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), value: line.VALUE, valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, stopped: line.STOPPED, neo4j_import_time: datetime()});
+
+// 142 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///CPTEVENTS.csv' AS line
+CREATE (:CPT_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), costcenter: line.COSTCENTER, chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), cpt_cd: line.CPT_CD, cpt_number: toInteger(line.CPT_NUMBER), cpt_suffix: line.CPT_SUFFIX, ticket_id_seq: toInteger(line.TICKET_ID_SEQ), sectionheader: line.SECTIONHEADER, subsectionheader: line.SUBSECTIONHEADER, description: line.DESCRIPTION, neo4j_import_time: datetime()});
+
+// 43 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///D_CPT.csv' AS line
+CREATE (:D_CPT { row_id: toInteger(line.ROW_ID), category: toInteger(line.CATEGORY), sectionrange: line.SECTIONRANGE, sectionheader: line.SECTIONHEADER, subsectionrange: line.SUBSECTIONRANGE, subsectionheader: line.SUBSECTIONHEADER, codesuffix: line.CODESUFFIX, mincodeinsubsection: toInteger(line.MINCODEINSUBSECTION), maxcodeinsubsection: toInteger(line.MAXCODEINSUBSECTION), neo4j_import_time: datetime()});
+
+// 553 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///D_ICD_DIAGNOSES.csv' AS line
+CREATE (:D_ICD_Diagnoses { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
+
+// 125 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///D_ICD_PROCEDURES.csv' AS line
+CREATE (:D_ICD_Procedures { row_id: toInteger(line.ROW_ID), icd9_code: line.ICD9_CODE, short_title: line.SHORT_TITLE, long_title: line.LONG_TITLE, neo4j_import_time: datetime()});
+
+// 513 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///D_ITEMS.csv' AS line
+CREATE (:D_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, abbreviation: line.ABBREVIATION, dbsource: line.DBSOURCE, linksto: line.LINKSTO, category: line.CATEGORY, unitname: line.UNITNAME, param_type: line.PARAM_TYPE, conceptid: toInteger(line.CONCEPTID), neo4j_import_time: datetime()});
+
+// 32 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///D_LABITEMS.csv' AS line
+CREATE (:D_Lab_Items { row_id: toInteger(line.ROW_ID), itemid: toInteger(line.ITEMID), label: line.LABEL, fluid: line.FLUID, category: line.CATEGORY, loinc_code: line.LOINC_CODE, neo4j_import_time: datetime()});
+
+// 1031 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///DATETIMEEVENTS.csv' AS line
+CREATE (:Datetime_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), value: datetime( REPLACE(line.VALUE, ' ', 'T')), valueuom: line.VALUEUOM, warning: toInteger(line.WARNING), error: toInteger(line.ERROR), resultstatus: line.RESULTSTATUS, stopped: line.STOPPED, neo4j_import_time: datetime()});
+
+// 56 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///DIAGNOSES_ICD.csv' AS line
+CREATE (:Diagnoses_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, neo4j_import_time: datetime()});
+
+// 43 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///DRGCODES.csv' AS line
+CREATE (:DRG_Codes { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), drg_type: line.DRG_TYPE, drg_code: line.DRG_CODE, description: line.DESCRIPTION, drg_severity: toInteger(line.DRG_SEVERITY), drg_mortality: toInteger(line.DRG_MORTALITY), neo4j_import_time: datetime()});
+
+// 52 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///ICUSTAYS.csv' AS line
+CREATE (:ICU_Stays { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, first_careunit: line.FIRST_CAREUNIT, last_careunit: line.LAST_CAREUNIT, first_wardid: toInteger(line.FIRST_WARDID), last_wardid: toInteger(line.LAST_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
+
+// 2245 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///INPUTEVENTS_CV.csv' AS line
+CREATE (:Input_Events_CV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), rateuom: line.RATEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), stopped: line.STOPPED, newbottle: toInteger(line.NEWBOTTLE), originalamount: toFloat(line.ORIGINALAMOUNT), originalamountuom: line.ORIGINALAMOUNTUOM, originalroute: line.ORIGINALROUTE, originalrate: toFloat(line.ORIGINALRATE), originalrateuom: line.ORIGINALRATEUOM, originalsite: line.ORIGINALSITE, neo4j_import_time: datetime()});
+
+// 1573 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///INPUTEVENTS_MV.csv' AS line
+CREATE (:Input_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), amount: toFloat(line.AMOUNT), amountuom: line.AMOUNTUOM, rate: toFloat(line.RATE), rateuom: line.RATEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), ordercategoryname: line.ORDERCATEGORYNAME, secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, ordercomponenttypedescription: line.ORDERCOMPONENTTYPEDESCRIPTION, ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, patientweight: toFloat(line.PATIENTWEIGHT), totalamount: toFloat(line.TOTALAMOUNT), totalamountuom: line.TOTALAMOUNTUOM, isopenbag: toInteger(line.ISOPENBAG), continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: datetime( REPLACE(line.COMMENTS_DATE, ' ', 'T')), originalamount: toFloat(line.ORIGINALAMOUNT), originalrate: toFloat(line.ORIGINALRATE), neo4j_import_time: datetime()});
+
+// 2662 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///LABEVENTS.csv' AS line
+CREATE (:Lab_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), itemid: toInteger(line.ITEMID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), value: line.VALUE, valuenum: toFloat(line.VALUENUM), valueuom: line.VALUEUOM, flag: line.FLAG, neo4j_import_time: datetime()});
+
+// 188 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///MICROBIOLOGYEVENTS.csv' AS line
+CREATE (:Microbiology_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), spec_itemid: line.SPEC_ITEMID, spec_type_desc: line.SPEC_TYPE_DESC, org_itemid: toInteger(line.ORG_ITEMID), org_name: line.ORG_NAME, isolate_num: toInteger(line.ISOLATE_NUM), ab_itemid: toInteger(line.AB_ITEMID), ab_name: line.AB_NAME, dilution_text: line.DILUTION_TEXT, dilution_comparison: line.DILUTION_COMPARISON, dilution_value: toFloat(line.DILUTION_VALUE), interpretation: line.INTERPRETATION});
+
+// ----error in csv-----
+
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///NOTEEVENTS.csv' AS line
+CREATE (:Note_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), chartdate: datetime( REPLACE(line.CHARTDATE, ' ', 'T')), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), category: line.CATEGORY, description: line.DESCRIPTION, cgid: toInteger(line.CGID), iserror: line.ISERROR, text: line.TEXT, neo4j_import_time: datetime()});
+
+//
+
+// 713 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///OUTPUTEVENTS.csv' AS line
+CREATE (:Output_Events { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), charttime: datetime( REPLACE(line.CHARTTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), value: toFloat(line.VALUE), valueuom: line.VALUEUOM, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), stopped: line.STOPPED, newbottle: line.NEWBOTTLE, iserror: toInteger(line.ISERROR), neo4j_import_time: datetime()});
+
+// 23 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///PATIENTS.csv' AS line
+CREATE (:Patients { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), gender: line.GENDER, dob: datetime( REPLACE(line.DOB, ' ', 'T')), dod: datetime( REPLACE(line.DOD, ' ', 'T')), dod_hosp: datetime( REPLACE(line.DOD_HOS, ' ', 'T')), dod_ssn: datetime( REPLACE(line.DOD_SSN, ' ', 'T')), expire_flag: toInteger(line.EXPIRE_FLAG)});
+
+// 842 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///PRESCRIPTIONS.csv' AS line
+CREATE (:Prescriptions { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), startdate: datetime( REPLACE(line.STARTDATE, ' ', 'T')), enddate: datetime( REPLACE(line.ENDDATE, ' ', 'T')), drug_type: line.DRUG_TYPE, drug: line.DRUG, drug_name_poe: line.DRUG_NAME_POE, drug_name_generic: line.DRUG_NAME_GENERIC, formulary_drug_cd: line.FORMULARY_DRUG_CD, gsn: line.GSN, ndc: line.NDC, prod_strength: line.PROD_STRENGTH, dose_val_rx: line.DOSE_VAL_RX, dose_unit_rx: line.DOSE_UNIT_RX, form_val_disp: line.FORM_VAL_DISP, form_unit_disp: line.FORM_UNIT_DISP, route: line.ROUTE, neo4j_import_time: datetime()});
+
+// 148 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///PROCEDUREEVENTS_MV.csv' AS line
+CREATE (:Procedure_Events_MV { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), starttime: datetime( REPLACE(line.STARTTIME, ' ', 'T')), endtime: datetime( REPLACE(line.ENDTIME, ' ', 'T')), itemid: toInteger(line.ITEMID), value: toFloat(line.VALUE), valueuom: line.VALUEUOM, location: line.LOCATION, locationcategory: line.LOCATIONCATEGORY, storetime: datetime( REPLACE(line.STORETIME, ' ', 'T')), cgid: toInteger(line.CGID), orderid: toInteger(line.ORDERID), linkorderid: toInteger(line.LINKORDERID), ordercategoryname: line.ORDERCATEGORYNAME, secondaryordercategoryname: line.SECONDARYORDERCATEGORYNAME, ordercategorydescription: line.ORDERCATEGORYDESCRIPTION, isopenbag: toInteger(line.ISOPENBAG), continueinnextdept: toInteger(line.CONTINUEINNEXTDEPT), cancelreason: toInteger(line.CANCELREASON), statusdescription: line.STATUSDESCRIPTION, comments_editedby: line.COMMENTS_EDITEDBY, comments_canceledby: line.COMMENTS_CANCELEDBY, comments_date: line.COMMENTS_DATE, neo4j_import_time: datetime()});
+
+// 23 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///PROCEDURES_ICD.csv' AS line
+CREATE (:Procedures_ICD { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), seq_num: toInteger(line.SEQ_NUM), icd9_code: line.ICD9_CODE, neo4j_import_time: datetime()});
+
+// 27 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///SERVICES.csv' AS line
+CREATE (:Services { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), transfertime: datetime( REPLACE(line.TRANSFERTIME, ' ', 'T')), prev_service: line.PREV_SERVICE, curr_service: line.CURR_SERVICE, neo4j_import_time: datetime()});
+
+// 104 ms
+USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM 'file:///TRANSFERS.csv' AS line
+CREATE (:Transfers { row_id: toInteger(line.ROW_ID), subject_id: toInteger(line.SUBJECT_ID), hadm_id: toInteger(line.HADM_ID), icustay_id: toInteger(line.ICUSTAY_ID), dbsource: line.DBSOURCE, eventtype: line.EVENTTYPE, prev_careunit: line.PREV_CAREUNIT, curr_careunit: line.CURR_CAREUNIT, prev_wardid: toInteger(line.PREV_WARDID), curr_wardid: toInteger(line.CURR_WARDID), intime: datetime( REPLACE(line.INTIME, ' ', 'T')), outtime: datetime( REPLACE(line.OUTTIME, ' ', 'T')), los: toFloat(line.LOS), neo4j_import_time: datetime()});
+
+// ----- CREATE INDEXES------
+
+CREATE INDEX ON :Admissions(subject_id); // 28 ms
+CREATE INDEX ON :Admissions(hadm_id); // 3 ms
+
+CREATE INDEX ON :Callout(subject_id); // 3 ms
+CREATE INDEX ON :Callout(hadm_id); // 2 ms
+
+CREATE INDEX ON :Chart_Events(itemid); // 2 ms
+
+CREATE INDEX ON :CPT_Events(subject_id); // 3 ms
+CREATE INDEX ON :CPT_Events(cpt_cd); // 3 ms
+
+CREATE INDEX ON :D_ICD_Diagnoses(icd9_code); // 2 ms
+CREATE INDEX ON :D_ICD_Diagnoses(long_title); // 2 ms
+
+CREATE INDEX ON :D_ICD_Procedures(icd9_code); // 3 ms
+CREATE INDEX ON :D_ICD_Procedures(long_title); // 2 ms
+
+CREATE INDEX ON :D_Items(itemid); // 2 ms
+CREATE INDEX ON :D_Items(label); // 3 ms
+
+CREATE INDEX ON :D_Lab_Items(itemid); // 2 ms
+CREATE INDEX ON :D_Lab_Items(label); // 2 ms
+CREATE INDEX ON :D_Lab_Items(loinc_code); // 2 ms
+
+CREATE INDEX ON :Datetime_Events(subject_id); // 2 ms
+CREATE INDEX ON :Datetime_Events(itemid); // 3 ms
+CREATE INDEX ON :Datetime_Events(icustay_id); // 2 ms
+CREATE INDEX ON :Datetime_Events(hadm_id); // 1 ms
+
+CREATE INDEX ON :Diagnoses_ICD(subject_id); // 2 ms
+CREATE INDEX ON :Diagnoses_ICD(icd9_code); // 3 ms
+CREATE INDEX ON :Diagnoses_ICD(hadm_id); // 2 ms
+
+CREATE INDEX ON :DRG_Codes(subject_id); // 2 ms
+CREATE INDEX ON :DRG_Codes(drg_code); // 2 ms
+CREATE INDEX ON :DRG_Codes(description); // 2 ms
+
+CREATE INDEX ON :ICU_Stays(subject_id); // 2 ms
+CREATE INDEX ON :ICU_Stays(icustay_id); // 2 ms
+CREATE INDEX ON :ICU_Stays(hadm_id); // 2 ms
+
+CREATE INDEX ON :Input_Events_CV(subject_id); // 2 ms
+CREATE INDEX ON :Input_Events_CV(hadm_id); // 2 ms
+CREATE INDEX ON :Input_Events_CV(icustay_id); // 2 ms
+CREATE INDEX ON :Input_Events_CV(charttime); // 3 ms
+CREATE INDEX ON :Input_Events_CV(itemid); // 2 ms
+
+CREATE INDEX ON :Input_Events_MV(subject_id); // 2 ms
+CREATE INDEX ON :Input_Events_MV(hadm_id); // 2 ms
+CREATE INDEX ON :Input_Events_MV(icustay_id); // 2 ms
+CREATE INDEX ON :Input_Events_MV(itemid); // 3 ms
+
+CREATE INDEX ON :Lab_Events(subject_id); // 3 ms
+CREATE INDEX ON :Lab_Events(hadm_id); // 3 ms
+CREATE INDEX ON :Lab_Events(itemid); // 1 ms
+
+CREATE INDEX ON :Microbiology_Events(subject_id); // 1 ms
+CREATE INDEX ON :Microbiology_Events(hadm_id); // 2 ms
+
+// ---CSV ERROR-----
+
+CREATE INDEX ON :Note_Events(subject_id);
+CREATE INDEX ON :Note_Events(hadm_id);
+CREATE INDEX ON :Note_Events(category);
+
+//
+
+CREATE INDEX ON :Output_Events(subject_id); // 3 ms
+CREATE INDEX ON :Output_Events(itemid); // 3 ms
+CREATE INDEX ON :Output_Events(icustay_id); // 2 ms
+CREATE INDEX ON :Output_Events(hadm_id); // 2 ms
+
+CREATE INDEX ON :Prescriptions(subject_id); // 2 ms
+CREATE INDEX ON :Prescriptions(icustay_id); // 2 ms
+CREATE INDEX ON :Prescriptions(drug_type); // 2 ms
+CREATE INDEX ON :Prescriptions(drug); // 1 ms
+CREATE INDEX ON :Prescriptions(hadm_id); // 2 ms
+
+CREATE INDEX ON :Procedure_Events_MV(subject_id); // 2 ms
+CREATE INDEX ON :Procedure_Events_MV(hadm_id); // 2 ms
+CREATE INDEX ON :Procedure_Events_MV(icustay_id); // 2 ms
+CREATE INDEX ON :Procedure_Events_MV(itemid); // 2 ms
+
+CREATE INDEX ON :Procedures_ICD(subject_id); // 2 ms
+CREATE INDEX ON :Procedures_ICD(icd9_code); // 3 ms
+CREATE INDEX ON :Procedures_ICD(hadm_id); // 2 ms
+
+CREATE INDEX ON :Services(subject_id); // 2 ms
+CREATE INDEX ON :Services(hadm_id); // 2 ms
+
+CREATE INDEX ON :Transfers(subject_id); // 3 ms
+CREATE INDEX ON :Transfers(icustay_id); // 2 ms
+CREATE INDEX ON :Transfers(hadm_id); // 3 ms
+
+// ------Create Relationships---------
+// https://stackoverflow.com/questions/39765174/creating-relationships-between-nodes-with-same-properties
+
+// Admissions
+
+// Create a relationship where HADM_ID is shared between Admissions and Callout
+// 1457 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (cal:Callout)
+WHERE cal.hadm_id = adm.hadm_id
+RETURN adm, cal",
+"MERGE(adm)-[r:ShareHADMID]-(cal)
+RETURN adm, r, cal", {batchSize:1000, parallel:true})
+
+// Create a relationship where HADM_ID is shared between Admissions and Chart_Events
+// 18668 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (cha:Chart_Events)
+WHERE cha.hadm_id = adm.hadm_id
+RETURN adm, cha",
+"MERGE(adm)-[r:ShareHADMID]-(cha)
+RETURN adm, r, cha", {batchSize:1000, parallel:true})
+
+// Create a relationship where HADM_ID is shared between Admissions and CPT_Events
+// 189 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (cpt:CPT_Events)
+WHERE cpt.hadm_id = adm.hadm_id
+RETURN adm, cpt",
+"MERGE(adm)-[r:ShareHADMID]-(cpt)
+RETURN adm, r, cpt", {batchSize:1000, parallel:true})
+
+// Create a relationship where HADM_ID is shared between Admissions and Datetime_Events
+// 501 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (dat:Datetime_Events)
+WHERE dat.hadm_id = adm.hadm_id
+RETURN adm, dat",
+"MERGE(adm)-[r:ShareHADMID]-(dat)
+RETURN adm, r, dat", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Diagnoses_ICD
+// 166 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (dia:Diagnoses_ICD)
+WHERE dia.hadm_id = adm.hadm_id
+RETURN adm, dia",
+"MERGE(adm)-[r:ShareHADMID]-(dia)
+RETURN adm, r, dia", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and DRG_Codes
+// 123 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (drg:DRG_Codes)
+WHERE drg.hadm_id = adm.hadm_id
+RETURN adm, drg",
+"MERGE(adm)-[r:ShareHADMID]-(drg)
+RETURN adm, r, drg", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and ICU_Stays
+// 115 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (icu:ICU_Stays)
+WHERE icu.hadm_id = adm.hadm_id
+RETURN adm, icu",
+"MERGE(adm)-[r:ShareHADMID]-(icu)
+RETURN adm, r, icu", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Input_Events_CV
+// 756 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (inpc:Input_Events_CV)
+WHERE inpc.hadm_id = adm.hadm_id
+RETURN adm, inpc",
+"MERGE(adm)-[r:ShareHADMID]-(inpc)
+RETURN adm, r, inpc", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Input_Events_MV
+// 355 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (inpm:Input_Events_MV)
+WHERE inpm.hadm_id = adm.hadm_id
+RETURN adm, inpm",
+"MERGE(adm)-[r:ShareHADMID]-(inpm)
+RETURN adm, r, inpm", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Lab_Events
+// 1018 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (lab:Lab_Events)
+WHERE lab.hadm_id = adm.hadm_id
+RETURN adm, lab",
+"MERGE(adm)-[r:ShareHADMID]-(lab)
+RETURN adm, r, lab", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Microbiology_Events
+// 122 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (mic:Microbiology_Events)
+WHERE mic.hadm_id = adm.hadm_id
+RETURN adm, mic",
+"MERGE(adm)-[r:ShareHADMID]-(mic)
+RETURN adm, r, mic", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Note_Events
+// Error in csv for sample set
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (not:Note_Events)
+WHERE not.hadm_id = adm.hadm_id
+RETURN adm, not",
+"MERGE(adm)-[r:ShareHADMID]-(not)
+RETURN adm, r, not", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Output_Events
+// 306 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (out:Output_Events)
+WHERE out.hadm_id = adm.hadm_id
+RETURN adm, out",
+"MERGE(adm)-[r:ShareHADMID]-(out)
+RETURN adm, r, out", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Prescriptions
+// 307 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (pre:Prescriptions)
+WHERE pre.hadm_id = adm.hadm_id
+RETURN adm, pre",
+"MERGE(adm)-[r:ShareHADMID]-(pre)
+RETURN adm, r, pre", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Procedure_Events_MV
+// 95 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (prom:Procedure_Events_MV)
+WHERE prom.hadm_id = adm.hadm_id
+RETURN adm, prom",
+"MERGE(adm)-[r:ShareHADMID]-(prom)
+RETURN adm, r, prom", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Procedures_ICD
+// 91 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (proi:Procedures_ICD)
+WHERE proi.hadm_id = adm.hadm_id
+RETURN adm, proi",
+"MERGE(adm)-[r:ShareHADMID]-(proi)
+RETURN adm, r, proi", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Services
+// 84 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (ser:Services)
+WHERE ser.hadm_id = adm.hadm_id
+RETURN adm, ser",
+"MERGE(adm)-[r:ShareHADMID]-(ser)
+RETURN adm, r, ser", {batchSize:1000, parallel:true});
+
+// Create a relationship where HADM_ID is shared between Admissions and Transfers
+// 94 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions)
+WITH adm
+MATCH (tra:Transfers)
+WHERE tra.hadm_id = adm.hadm_id
+RETURN adm, tra",
+"MERGE(adm)-[r:ShareHADMID]-(tra)
+RETURN adm, r, tra", {batchSize:1000, parallel:true});
+
+// Caregivers
+
+// Create a relationship where CGID is shared between Caregivers and Chart_Events
+// 10464 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (cha:Chart_Events)
+WHERE cha.cgid = car.cgid
+RETURN car, cha",
+"MERGE(car)-[r:ShareCGID]-(cha)
+RETURN car, r, cha", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Datetime_Events
+// 420 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (dat:Datetime_Events)
+WHERE dat.cgid = car.cgid
+RETURN car, dat",
+"MERGE(car)-[r:ShareCGID]-(dat)
+RETURN car, r, dat", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Input_Events_CV
+// 737 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (inpc:Input_Events_CV)
+WHERE inpc.cgid = car.cgid
+RETURN car, inpc",
+"MERGE(car)-[r:ShareCGID]-(inpc)
+RETURN car, r, inpc", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Input_Events_MV
+// 446 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (inpm:Input_Events_MV)
+WHERE inpm.cgid = car.cgid
+RETURN car, inpm",
+"MERGE(car)-[r:ShareCGID]-(inpm)
+RETURN car, r, inpm", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Note_Events
+// Error in csv for sample set
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (not:Note_Events)
+WHERE not.cgid = car.cgid
+RETURN car, not",
+"MERGE(car)-[r:ShareCGID]-(not)
+RETURN car, r, not", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Output_Events
+// 314 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (out:Output_Events)
+WHERE out.cgid = car.cgid
+RETURN car, out",
+"MERGE(car)-[r:ShareCGID]-(out)
+RETURN car, r, out", {batchSize:1000, parallel:true});
+
+// Create a relationship where CGID is shared between Caregivers and Procedure_Events_MV
+// 93 ms
+CALL apoc.periodic.iterate(
+"MATCH (car:Caregivers)
+WITH car
+MATCH (prom:Procedure_Events_MV)
+WHERE prom.cgid = car.cgid
+RETURN car, prom",
+"MERGE(car)-[r:ShareCGID]-(prom)
+RETURN car, r, prom", {batchSize:1000, parallel:true});
+
+// D_ICD_Diagnoses
+
+// Create a relationship where icd9_code is shared between D_ICD_Diagnoses and Diagnoses_ICD
+// 381 ms
+CALL apoc.periodic.iterate(
+"MATCH (dicd:D_ICD_Diagnoses)
+WITH dicd
+MATCH (dia:Diagnoses_ICD)
+WHERE dia.icd9_code = dicd.icd9_code
+RETURN dicd, dia",
+"MERGE(dicd)-[r:ShareICD9Code]-(dia)
+RETURN dicd, r, dia", {batchSize:1000, parallel:true});
+
+// D_ICD_Procedures
+
+// Create a relationship where icd9_code is shared between D_ICD_Procedures and Procedures_ICD
+// 95 ms
+CALL apoc.periodic.iterate(
+"MATCH (dicdp:D_ICD_Procedures)
+WITH dicdp
+MATCH (pro:Procedures_ICD)
+WHERE pro.icd9_code = dicdp.icd9_code
+RETURN dicdp, pro",
+"MERGE(dicdp)-[r:ShareICD9Code]-(pro)
+RETURN dicdp, r, pro", {batchSize:1000, parallel:true});
+
+// D_Items
+
+// Create a relationship where itemid is shared between D_Items and Chart_Events
+// 19927 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (cha:Chart_Events)
+WHERE cha.itemid = dit.itemid
+RETURN dit, cha",
+"MERGE(dit)-[r:ShareItemID]-(cha)
+RETURN dit, r, cha", {batchSize:1000, parallel:true});
+
+// Create a relationship where itemid is shared between D_Items and Datetime_Events
+// 678 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (dat:Datetime_Events)
+WHERE dat.itemid = dit.itemid
+RETURN dit, dat",
+"MERGE(dit)-[r:ShareItemID]-(dat)
+RETURN dit, r, dat", {batchSize:1000, parallel:true});
+
+// Create a relationship where itemid is shared between D_Items and Input_Events_MV
+// 668 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (inpm:Input_Events_MV)
+WHERE inpm.itemid = dit.itemid
+RETURN dit, inpm",
+"MERGE(dit)-[r:ShareItemID]-(inpm)
+RETURN dit, r, inpm", {batchSize:1000, parallel:true});
+
+// Create a relationship where spec_itemid is shared between D_Items and Microbiology_Events
+// Not working?
+match (dit:D_Items)
+with dit
+match (mic:Microbiology_Events)
+where mic.spec_itemid = dit.itemid
+merge(dit)-[r:ShareItemID]-(mic) 
+return dit, r, mic;
+
+// Create a relationship where org_itemid is shared between D_Items and Microbiology_Events
+// 124 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (mic:Microbiology_Events)
+WHERE mic.org_itemid = dit.itemid
+RETURN dit, mic",
+"MERGE(dit)-[r:ShareItemID]-(mic)
+RETURN dit, r, mic", {batchSize:1000, parallel:true});
+
+// Create a relationship where ab_itemid is shared between D_Items and Microbiology_Events
+// 93 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (mic:Microbiology_Events)
+WHERE mic.ab_itemid = dit.itemid
+RETURN dit, mic",
+"MERGE(dit)-[r:ShareItemID]-(mic)
+RETURN dit, r, mic", {batchSize:1000, parallel:true});
+
+// Create a relationship where itemid is shared between D_Items and Output_Events
+// 714 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (out:Output_Events)
+WHERE out.itemid = dit.itemid
+RETURN dit, out",
+"MERGE(dit)-[r:ShareItemID]-(out)
+RETURN dit, r, out", {batchSize:1000, parallel:true});
+
+// Create a relationship where itemid is shared between D_Items and Procedure_Events_MV
+// 91 ms
+CALL apoc.periodic.iterate(
+"MATCH (dit:D_Items)
+WITH dit
+MATCH (prom:Procedure_Events_MV)
+WHERE prom.itemid = dit.itemid
+RETURN dit, prom",
+"MERGE(dit)-[r:ShareItemID]-(prom)
+RETURN dit, r, prom", {batchSize:1000, parallel:true});
+
+// D_Lab_Items
+
+// Create a relationship where itemid is shared between D_Lab_Items and Lab_Events
+// 2111 ms
+CALL apoc.periodic.iterate(
+"MATCH (dla:D_Lab_Items)
+WITH dla
+MATCH (lab:Lab_Events)
+WHERE lab.itemid = dla.itemid
+RETURN dla, lab",
+"MERGE(dla)-[r:ShareItemID]-(lab)
+RETURN dla, r, lab", {batchSize:1000, parallel:true});
+
+// ICU_Stays
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Chart_Events
+// 14113 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (cha:Chart_Events)
+WHERE cha.icustay_id = icu.icustay_id
+RETURN icu, cha",
+"MERGE(icu)-[r:ShareICUStayID]-(cha)
+RETURN icu, r, cha", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Datetime_Events
+// 399 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (dat:Datetime_Events)
+WHERE dat.icustay_id = icu.icustay_id
+RETURN icu, dat",
+"MERGE(icu)-[r:ShareICUStayID]-(dat)
+RETURN icu, r, dat", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Input_Events_CV
+// 765 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (inpc:Input_Events_CV)
+WHERE inpc.icustay_id = icu.icustay_id
+RETURN icu, inpc",
+"MERGE(icu)-[r:ShareICUStayID]-(inpc)
+RETURN icu, r, inpc", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Input_Events_MV
+// 347 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (inpm:Input_Events_MV)
+WHERE inpm.icustay_id = icu.icustay_id
+RETURN icu, inpm",
+"MERGE(icu)-[r:ShareICUStayID]-(inpm)
+RETURN icu, r, inpm", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Output_Events
+// 378 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (out:Output_Events)
+WHERE out.icustay_id = icu.icustay_id
+RETURN icu, out",
+"MERGE(icu)-[r:ShareICUStayID]-(out)
+RETURN icu, r, out", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Prescriptions
+// 248 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (pre:Prescriptions)
+WHERE pre.icustay_id = icu.icustay_id
+RETURN icu, pre",
+"MERGE(icu)-[r:ShareICUStayID]-(pre)
+RETURN icu, r, pre", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Procedure_Events_MV
+// 74 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (prom:Procedure_Events_MV)
+WHERE prom.icustay_id = icu.icustay_id
+RETURN icu, prom",
+"MERGE(icu)-[r:ShareICUStayID]-(prom)
+RETURN icu, r, prom", {batchSize:1000, parallel:true});
+
+// Create a relationship where icustay_id is shared between ICU_Stays and Transfers
+// 57 ms
+CALL apoc.periodic.iterate(
+"MATCH (icu:ICU_Stays)
+WITH icu
+MATCH (tra:Transfers)
+WHERE tra.icustay_id = icu.icustay_id
+RETURN icu, tra",
+"MERGE(icu)-[r:ShareICUStayID]-(tra)
+RETURN icu, r, tra", {batchSize:1000, parallel:true});
+
+// Patients
+
+// Create a relationship where subject_id is shared between Patients and Admissions
+// 61 ms
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (adm:Admissions)
+WHERE adm.subject_id = pat.subject_id
+RETURN pat, adm",
+"MERGE(pat)-[r:ShareSubjectID]-(adm)
+RETURN pat, r, adm", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Callout
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (cal:Callout)
+WHERE cal.subject_id = pat.subject_id
+RETURN pat, cal",
+"MERGE(pat)-[r:ShareSubjectID]-(cal)
+RETURN pat, r, cal", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Chart_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (cha:Chart_Events)
+WHERE cha.subject_id = pat.subject_id
+RETURN pat, cha",
+"MERGE(pat)-[r:ShareSubjectID]-(cha)
+RETURN pat, r, cha", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and CPT_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (cpt:CPT_Events)
+WHERE cpt.subject_id = pat.subject_id
+RETURN pat, cpt",
+"MERGE(pat)-[r:ShareSubjectID]-(cpt)
+RETURN pat, r, cpt", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Datetime_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (dat:Datetime_Events)
+WHERE dat.subject_id = pat.subject_id
+RETURN pat, dat",
+"MERGE(pat)-[r:ShareSubjectID]-(dat)
+RETURN pat, r, dat", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Diagnoses_ICD
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (dia:Diagnoses_ICD)
+WHERE dia.subject_id = pat.subject_id
+RETURN pat, dia",
+"MERGE(pat)-[r:ShareSubjectID]-(dia)
+RETURN pat, r, dia", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and DRG_Codes
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (drg:DRG_Code)
+WHERE drg.subject_id = pat.subject_id
+RETURN pat, drg",
+"MERGE(pat)-[r:ShareSubjectID]-(drg)
+RETURN pat, r, drg", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and ICU_Stays
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (icu:ICU_Stays)
+WHERE icu.subject_id = pat.subject_id
+RETURN pat, icu",
+"MERGE(pat)-[r:ShareSubjectID]-(icu)
+RETURN pat, r, icu", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Input_Events_CV
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (inpc:Input_Events_CV)
+WHERE inpc.subject_id = pat.subject_id
+RETURN pat, inpc",
+"MERGE(pat)-[r:ShareSubjectID]-(inpc)
+RETURN pat, r, inpc", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Input_Events_MV
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (inpm:Input_Events_MV)
+WHERE inpm.subject_id = pat.subject_id
+RETURN pat, inpm",
+"MERGE(pat)-[r:ShareSubjectID]-(inpm)
+RETURN pat, r, inpm", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Lab_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (lab:Lab_Events)
+WHERE lab.subject_id = pat.subject_id
+RETURN pat, lab",
+"MERGE(pat)-[r:ShareSubjectID]-(lab)
+RETURN pat, r, lab", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Microbiology_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (mic:Microbiology_Events)
+WHERE mic.subject_id = pat.subject_id
+RETURN pat, mic",
+"MERGE(pat)-[r:ShareSubjectID]-(mic)
+RETURN pat, r, mic", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Note_Events
+// Error in CSV for test dataset
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (not:Note_Events)
+WHERE not.subject_id = pat.subject_id
+RETURN pat, not",
+"MERGE(pat)-[r:ShareSubjectID]-(not)
+RETURN pat, r, not", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Output_Events
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (out:Output_Events)
+WHERE out.subject_id = pat.subject_id
+RETURN pat, out",
+"MERGE(pat)-[r:ShareSubjectID]-(out)
+RETURN pat, r, out", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Prescriptions
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (pre:Prescriptionss)
+WHERE pre.subject_id = pat.subject_id
+RETURN pat, pre",
+"MERGE(pat)-[r:ShareSubjectID]-(pre)
+RETURN pat, r, pre", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Procedure_Events_MV
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (prom:Procedure_Events_MV)
+WHERE prom.subject_id = pat.subject_id
+RETURN pat, prom",
+"MERGE(pat)-[r:ShareSubjectID]-(prom)
+RETURN pat, r, prom", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Procedures_ICD
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (proi:Procedures_ICD)
+WHERE proi.subject_id = pat.subject_id
+RETURN pat, proi",
+"MERGE(pat)-[r:ShareSubjectID]-(proi)
+RETURN pat, r, proi", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Services
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (ser:Services)
+WHERE ser.subject_id = pat.subject_id
+RETURN pat, ser",
+"MERGE(pat)-[r:ShareSubjectID]-(ser)
+RETURN pat, r, ser", {batchSize:1000, parallel:true});
+
+// Create a relationship where subject_id is shared between Patients and Transfers
+CALL apoc.periodic.iterate(
+"MATCH (pat:Patients)
+WITH pat
+MATCH (tra:Transfers)
+WHERE tra.subject_id = pat.subject_id
+RETURN pat, tra",
+"MERGE(pat)-[r:ShareSubjectID]-(tra)
+RETURN pat, r, tra", {batchSize:1000, parallel:true});
+
+// Modified Database Extra Steps
+
+// Create relationship between Admissions and D_ICD_Diagnoses, removing the necessity for the join table Diagnoses_ICD
+// 8948044 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions), (dia:Diagnoses_ICD), (dicd:D_ICD_Diagnoses) 
+WHERE (adm:Admissions)-[:ShareHADMID]-(dia:Diagnoses_ICD)-[:ShareICD9Code]-(dicd:D_ICD_Diagnoses)
+RETURN adm, dia, dicd",
+"MERGE (adm)-[dr:DiagnosedWith]-(dicd)
+ON CREATE SET dr.seq_num = dia.seq_num, dr.subject_id = dia.subject_id
+RETURN adm, dr, dicd", {batchSize:1000, parallel:true})
+
+// Create relationship between Admissions and D_ICD_Procedures, removing the necessity for the join table Procedures_ICD
+// 772056 ms
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions), (pro:Procedures_ICD), (dpro:D_ICD_Procedures) 
+WHERE (adm:Admissions)-[:ShareHADMID]-(pro:Procedures_ICD)-[:ShareICD9Code]-(dpro:D_ICD_Procedures)
+RETURN adm, pro, dpro",
+"MERGE (adm)-[pr:HadProcedure]-(dpro)
+ON CREATE SET pr.seq_num = pro.seq_num, pr.subject_id = pro.subject_id
+RETURN adm, pr, dpro", {batchSize:1000, parallel:true})
+
+// Create relationship between Admissions and D_Lab_Items, removing the necessity for the join table Lab_Events
+CALL apoc.periodic.iterate(
+"MATCH (adm:Admissions), (lab: Lab_Events), (dlab: D_Lab_Items) 
+WHERE (adm:Admissions)-[:ShareHADMID]-(lab:Lab_Events)-[:ShareItemID]-(dlab:D_Lab_Items)
+RETURN adm, lab, dlab",
+"MERGE (adm)-[lr:LabEvent]-(dlab)
+ON CREATE SET lr.seq_num = lab.seq_num, lr.subject_id = lab.subject_id, lr.value = lab.value, 
+			lr.valuenum = lab.valuenum, lr.valueuom = lab.valueuom
+RETURN adm, lr, dlab", {batchSize:1000, parallel:true})
+
+// Delete now unnecessary join tables
+
+// 106 ms
+MATCH (dia:Diagnoses_ICD)
+DETACH DELETE dia;
+
+// 20 ms
+MATCH (pro:Procedures_ICD)
+DETACH DELETE pro;
+
+MATCH (lab: Lab_Events)
+DETACH DELETE lab;
