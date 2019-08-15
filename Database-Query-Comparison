@@ -36,13 +36,11 @@ propData.unique as uniqueConstraint, propData.existence as existenceConstraint;
 SELECT *
 FROM patients;
 
-
 // Cypher (unmodified db)
 // Clauses: 2
 // Runtime: 19 ms
 MATCH (pat:Patients)
 RETURN pat;
-
 
 // Cypher (modified db)
 // Clauses: 2
@@ -50,3 +48,84 @@ RETURN pat;
 MATCH (pat:Patients)
 RETURN pat;
 
+// Return count of nodes with Patient label
+
+// SQL
+// Clauses: 3
+// Runtime: 58 ms
+SELECT COUNT(*)
+FROM patients;
+
+// Cypher (unmodified db)
+// Clauses: 3
+// Runtime: 10 ms
+MATCH (pat:Patients)
+RETURN COUNT(pat);
+
+// Cypher (modified db)
+// Clauses: 3
+// Runtime: 11 ms
+MATCH (pat:Patients)
+RETURN COUNT(pat);
+
+// Return distinct values used to indicate gender
+
+// SQL
+// Clauses: 3
+// Runtime: 131 ms
+SELECT DISTINCT(gender)
+FROM patients;
+
+// Cypher (unmodified db)
+// Clauses: 3
+// Runtime: 81 ms
+MATCH (pat:Patients)
+RETURN DISTINCT(pat.gender);
+
+// Cypher (modified db)
+// Clauses: 3
+// Runtime: 21 ms
+MATCH (pat:Patients)
+RETURN DISTINCT(pat.gender);
+
+// Return count of female patients
+
+// SQL
+// Clauses: 4
+// Runtime: 72 ms
+SELECT COUNT(*)
+FROM patients
+WHERE gender = 'F';
+
+// Cypher (unmodified db)
+// Clauses: 3
+// Runtime: 2 ms
+MATCH (pat:Patients { gender: 'F'})
+RETURN COUNT(pat);
+
+// Cypher (modified db)
+// Clauses: 3
+// Runtime: 16 ms
+MATCH (pat:Patients { gender: 'F'})
+RETURN COUNT(pat);
+
+// Return count of male and female patients
+
+// SQL
+// Clauses: 4
+// Runtime: 71 ms
+SELECT gender, COUNT(*)
+FROM patients
+GROUP BY gender;
+
+// Cypher (unmodified db)
+// Clauses: 4
+// Runtime: 11 ms
+MATCH (pat:Patients)
+RETURN DISTINCT(pat.gender), COUNT(pat.gender);
+
+// Cypher (modified db)
+// Clauses: 4
+// Runtime: 18 ms
+MATCH (pat:Patients)
+RETURN DISTINCT(pat.gender), COUNT(pat.gender);
