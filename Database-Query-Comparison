@@ -1,3 +1,6 @@
+// Comparison of PostgreSQL (SQL) and Neo4j (Cypher) query complexity and runtime
+// SQL queries sourced from MIMIC-III Critical Care Database https://mimic.physionet.org/tutorials/intro-to-mimic-iii/
+
 // Database metadata *no direct comparison existed between SQL and Cypher
 
 // SQL
@@ -129,3 +132,763 @@ RETURN DISTINCT(pat.gender), COUNT(pat.gender);
 // Runtime: 18 ms
 MATCH (pat:Patients)
 RETURN DISTINCT(pat.gender), COUNT(pat.gender);
+
+// Count the number of patients who have died
+
+// SQL
+// Clauses: 4
+// Runtime: 129 ms
+SELECT expire_flag, COUNT(*)
+FROM patients
+GROUP BY expire_flag;
+
+// Cypher (unmodified db)
+// Clauses: 3
+// Runtime: 18 ms
+MATCH (pat:Patients)
+RETURN pat.expire_flag, COUNT(pat.expire_flag);
+
+// Cypher (modified db)
+// Clauses: 3
+// Runtime: 15 ms
+MATCH (pat:Patients)
+RETURN pat.expire_flag, COUNT(pat.expire_flag);
+
+// Find patient admission dates and dates of birth
+
+// SQL
+// Clauses: 4
+// Runtime: 189 ms
+SELECT p.subject_id, p.dob, a.hadm_id, a.admittime, p.expire_flag
+FROM admissions a
+INNER JOIN patients p
+ON p.subject_id = a.subject_id;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 19 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+RETURN pat.subject_id, pat.dob, adm.hadm_id, adm.admittime, pat.expire_flag;
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 21 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+RETURN pat.subject_id, pat.dob, adm.hadm_id, adm.admittime, pat.expire_flag;
+
+// Determine the earliest admission time for each patient
+
+// SQL
+// Clauses: 8
+// Runtime: 256 ms
+SELECT p.subject_id, p.dob, a.hadm_id,
+    a.admittime, p.expire_flag,
+    MIN (a.admittime) OVER (PARTITION BY p.subject_id) AS first_admittime
+FROM admissions a
+INNER JOIN patients p
+ON p.subject_id = a.subject_id
+ORDER BY a.hadm_id, p.subject_id;
+
+// Cypher (unmodified db)
+// Clauses: 4
+// Runtime: 118 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS first_admittime
+RETURN pat.subject_id, pat.dob, adm.hadm_id, adm.admittime, pat.expire_flag, MIN(first_admittime) AS first_admittime;
+
+// Cypher (modified db)
+// Clauses: 4
+// Runtime: 45 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS first_admittime
+RETURN pat.subject_id, pat.dob, adm.hadm_id, adm.admittime, pat.expire_flag, MIN(first_admittime) AS first_admittime;
+
+// Calculate patients' age at admission from dob and earliest admission time
+
+// SQL
+// Clauses: 21
+// Runtime: 194 ms
+WITH first_admission_time AS
+(
+  SELECT
+      p.subject_id, p.dob, p.gender
+      , MIN (a.admittime) AS first_admittime
+      , MIN( ROUND( (cast(admittime as date) - cast(dob as date)) / 365.242,2) )
+          AS first_admit_age
+  FROM patients p
+  INNER JOIN admissions a
+  ON p.subject_id = a.subject_id
+  GROUP BY p.subject_id, p.dob, p.gender
+  ORDER BY p.subject_id
+)
+SELECT
+    subject_id, dob, gender, first_admittime, first_admit_age, 
+    CASE
+        -- all ages > 89 in the database were replaced with 300
+        WHEN first_admit_age > 89
+            then '>89'
+        WHEN first_admit_age >= 14
+            THEN 'adult'
+        WHEN first_admit_age <= 1
+            THEN 'neonate'
+        ELSE 'middle'
+        END AS age_group
+FROM first_admission_time
+ORDER BY subject_id;
+
+// Cypher (unmodified db)
+// Clauses: 16
+// Runtime: 29 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS admittime
+UNWIND(pat.dob) AS bday
+WITH pat.subject_id AS subject_id, pat.dob AS dob, pat.gender as gender,  
+        MIN(admittime) AS first_admittime, duration.between(bday, MIN(admittime)).years AS first_admit_age
+RETURN subject_id, dob, gender, first_admittime, first_admit_age, 
+CASE 
+        WHEN first_admit_age <= 1
+                THEN 'neonate'
+        WHEN first_admit_age <= 14
+                THEN 'middle'
+        WHEN first_admit_age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS age_group;
+
+// Cypher (modified db)
+// Clauses: 16
+// Runtime: 178 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS admittime
+UNWIND(pat.dob) AS bday
+WITH pat.subject_id AS subject_id, pat.dob AS dob, pat.gender as gender,  
+        MIN(admittime) AS first_admittime, duration.between(bday, MIN(admittime)).years AS first_admit_age
+RETURN subject_id, dob, gender, first_admittime, first_admit_age, 
+CASE 
+        WHEN first_admit_age <= 1
+                THEN 'neonate'
+        WHEN first_admit_age <= 14
+                THEN 'middle'
+        WHEN first_admit_age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS age_group;
+
+// Count male and female patients in the adult and >89 age groups
+
+// SQL
+// Clauses: 23
+// Runtime: 219 ms
+WITH first_admission_time AS
+(
+  SELECT
+      p.subject_id, p.dob, p.gender
+      , MIN (a.admittime) AS first_admittime
+      , MIN( ROUND( (cast(admittime as date) - cast(dob as date)) / 365.242,2) )
+          AS first_admit_age
+  FROM patients p
+  INNER JOIN admissions a
+  ON p.subject_id = a.subject_id
+  GROUP BY p.subject_id, p.dob, p.gender
+  ORDER BY p.subject_id
+)
+, age as
+(
+  SELECT
+      subject_id, dob, gender
+      , first_admittime, first_admit_age
+      , CASE
+          -- all ages > 89 in the database were replaced with 300
+          -- we check using > 100 as a conservative threshold to ensure we capture all these patients
+          WHEN first_admit_age > 100
+              then '>89'
+          WHEN first_admit_age >= 14
+              THEN 'adult'
+          WHEN first_admit_age <= 1
+              THEN 'neonate'
+          ELSE 'middle'
+          END AS age_group
+  FROM first_admission_time
+)
+SELECT age_group, gender
+  , count(subject_id) as NumberOfPatients
+FROM age
+GROUP BY age_group, gender;
+
+// Cypher (unmodified db)
+// Clauses: 16
+// Runtime: 35 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS admittime
+UNWIND(pat.dob) AS bday
+WITH pat.gender AS gender, 
+        MIN(admittime) AS first_admittime, 
+        duration.between(bday, MIN(admittime)).years AS first_admit_age
+RETURN         
+CASE 
+        WHEN first_admit_age <= 1
+            THEN 'neonate'
+        WHEN first_admit_age <= 14
+            THEN 'middle'
+        WHEN first_admit_age > 100
+            THEN '> 89'
+        ELSE 'adult' 
+        END AS age_group, gender, 
+COUNT(gender) AS numberofpatients;
+                
+// Cypher (modified db)
+// Clauses: 16
+// Runtime: 32 ms
+MATCH (adm:Admissions)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(adm.admittime) AS admittime
+UNWIND(pat.dob) AS bday
+WITH pat.gender AS gender, 
+        MIN(admittime) AS first_admittime, 
+        duration.between(bday, MIN(admittime)).years AS first_admit_age
+RETURN         
+CASE 
+        WHEN first_admit_age <= 1
+            THEN 'neonate'
+        WHEN first_admit_age <= 14
+            THEN 'middle'
+        WHEN first_admit_age > 100
+            THEN '> 89'
+        ELSE 'adult' 
+        END AS age_group, gender, 
+COUNT(gender) AS numberofpatients;
+
+// Look at transfers
+
+// SQL
+// Clauses: 2
+// Runtime: 153 ms
+SELECT *
+FROM transfers;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 25 ms
+MATCH (tra:Transfers)
+RETURN tra;
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 43 ms
+MATCH (tra:Transfers)
+RETURN tra;
+
+// Look at transfers with HADMID 180391
+
+// SQL
+// Clauses: 3
+// Runtime: 177 ms
+SELECT *
+FROM transfers
+WHERE HADM_ID = 112213;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 52 ms
+MATCH (tra:Transfers { hadm_id: 180391})
+RETURN tra;
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 12 ms
+MATCH (tra:Transfers { hadm_id: 180391})
+RETURN tra;
+
+// Retrieve ‘subject_id’, ‘hadm_id’, ‘icustay_id’, ‘intime’, and ‘outtime’ from the ‘icustays’ table
+
+// SQL
+// Clauses: 2
+// Runtime: 74 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id, ie.intime, ie.outtime
+FROM icustays ie;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 12 ms
+MATCH (icu:ICU_Stays)
+RETURN icu.subject_id, icu.hadm_id, icu.icustay_id, icu.intime, icu.outtime;
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 15 ms
+MATCH (icu:ICU_Stays)
+RETURN icu.subject_id, icu.hadm_id, icu.icustay_id, icu.intime, icu.outtime;
+
+// Calculate Patient Age
+
+// SQL
+// Clauses: 5
+// Runtime: 160 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id, ie.intime, ie.outtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) AS age
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id;
+
+// Cypher (unmodified db)
+// Clauses: 4
+// Runtime: 29 ms
+MATCH (icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+RETURN icu.subject_id, icu.hadm_id, icu.icustay_id, icu.intime, icu.outtime, duration.between(dob, intime).years AS age;
+
+// Cypher (modified db)
+// Clauses: 4
+// Runtime: 25 ms
+MATCH (icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+RETURN icu.subject_id, icu.hadm_id, icu.icustay_id, icu.intime, icu.outtime, duration.between(dob, intime).years AS age;
+
+// Calculate Patient Age and Age Group
+
+// SQL
+// Clauses: 16
+// Runtime: 179 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id,
+    ie.intime, ie.outtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) AS age,
+    CASE
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 1
+            THEN 'neonate'
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 14
+            THEN 'middle'
+        -- all ages > 89 in the database were replaced with 300
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) > 100
+            then '>89'
+        ELSE 'adult'
+        END AS ICUSTAY_AGE_GROUP
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id;
+
+// Cypher (unmodified db)
+// Clauses: 14
+// Runtime: 31 ms
+MATCH (icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+WITH duration.between(dob, intime).years AS age, icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, icu.outtime AS outtime
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, age, 
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Cypher (modified db)
+// Clauses: 14
+// Runtime: 13 ms
+MATCH (icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+WITH duration.between(dob, intime).years AS age, icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, icu.outtime AS outtime
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, age, 
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Find how long each stay was BEFORE the patients were admitted to the ICU
+
+// SQL
+// Clauses: 20
+// Runtime: 138 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id,
+    ie.intime, ie.outtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) as age,
+    ROUND((cast(ie.intime as date) - cast(adm.admittime as date))/365.242, 2) as preiculos,
+    CASE
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 1
+            THEN 'neonate'
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 14
+            THEN 'middle'
+        -- all ages > 89 in the database were replaced with 300
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) > 100
+            THEN '>89'
+        ELSE 'adult'
+        END AS ICUSTAY_AGE_GROUP
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id
+INNER JOIN admissions adm
+ON ie.hadm_id = adm.hadm_id;
+
+// Cypher (unmodified db)
+// Clauses: 15
+// Runtime: 133 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime
+// WHERE preiculos_days > 1 // add in this line to see patients with los > 1
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Cypher (modified db)
+// Clauses: 15
+// Runtime: 193 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime
+// WHERE preiculos_days > 1 // add in this line to see patients with los > 1
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Find the patients' date of death if applicable
+
+// SQL
+// Clauses: 20
+// Runtime: 180 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id,
+    ie.intime, ie.outtime, adm.deathtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) as age,
+    ROUND((cast(ie.intime as date) - cast(adm.admittime as date))/365.242, 2) AS preiculos,
+    CASE
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 1
+            THEN 'neonate'
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 14
+            THEN 'middle'
+        -- all ages > 89 in the database were replaced with 300
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) > 100
+            THEN '>89'
+        ELSE 'adult'
+        END AS ICUSTAY_AGE_GROUP
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id
+INNER JOIN admissions adm
+ON ie.hadm_id = adm.hadm_id;
+
+// Cypher (unmodified db)
+// Clauses: 15
+// Runtime: 31 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime
+// WHERE preiculos_days > 1 // add in this line to see patients with los > 1
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Cypher (modified db)
+// Clauses: 15
+// Runtime: 19 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime
+// WHERE preiculos_days > 1 // add in this line to see patients with los > 1
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group;
+
+// Find those deaths that occurred while the patients were in the hospital
+
+// SQL
+// Clauses: 24
+// Runtime: 168 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id,
+    ie.intime, ie.outtime, adm.deathtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) AS age,
+    ROUND((cast(ie.intime as date) - cast(adm.admittime as date))/365.242, 2) AS preiculos,
+    CASE
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 1
+            THEN 'neonate'
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 14
+            THEN 'middle'
+        -- all ages > 89 in the database were replaced with 300
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) > 100
+            THEN '>89'
+        ELSE 'adult'
+        END AS ICUSTAY_AGE_GROUP,
+    -- note that there is already a "hospital_expire_flag" field in the admissions table which you could use
+    CASE
+        WHEN adm.hospital_expire_flag = 1 then 'Y'
+    ELSE 'N'
+    END AS hospital_expire_flag
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id
+INNER JOIN admissions adm
+ON ie.hadm_id = adm.hadm_id;
+
+// Cypher (unmodified db)
+// Clauses: 20
+// Runtime: 81 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime, adm.hospital_expire_flag as hospital_expire_flag
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group,
+CASE
+        WHEN hospital_expire_flag = 1
+                THEN 'Y'
+        ELSE 'N'
+        END AS hospital_expire_flag;
+
+// Cypher (modified db)
+// Clauses: 20
+// Runtime: 16 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime, adm.hospital_expire_flag as hospital_expire_flag
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group,
+CASE
+        WHEN hospital_expire_flag = 1
+                THEN 'Y'
+        ELSE 'N'
+        END AS hospital_expire_flag;
+
+// Find how many of those deaths occurred within the ICU
+
+// SQL
+// Clauses: 35
+// Runtime: 155 ms
+SELECT ie.subject_id, ie.hadm_id, ie.icustay_id,
+    ie.intime, ie.outtime, adm.deathtime,
+    ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) AS age,
+    ROUND((cast(ie.intime as date) - cast(adm.admittime as date))/365.242, 2) AS preiculos,
+    CASE
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 1
+            THEN 'neonate'
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) <= 14
+            THEN 'middle'
+        -- all ages > 89 in the database were replaced with 300
+        WHEN ROUND((cast(ie.intime as date) - cast(pat.dob as date))/365.242, 2) > 100
+            THEN '>89'
+        ELSE 'adult'
+        END AS ICUSTAY_AGE_GROUP,
+    -- note that there is already a "hospital_expire_flag" field in the admissions table which you could use
+    CASE
+        WHEN adm.hospital_expire_flag = 1 then 'Y'           
+    ELSE 'N'
+    END AS hospital_expire_flag,
+    -- note also that hospital_expire_flag is equivalent to "Is adm.deathtime not null?"
+    CASE
+        WHEN adm.deathtime BETWEEN ie.intime and ie.outtime
+            THEN 'Y'
+        -- sometimes there are typographical errors in the death date, so check before intime
+        WHEN adm.deathtime <= ie.intime
+            THEN 'Y'
+        WHEN adm.dischtime <= ie.outtime
+            AND adm.discharge_location = 'DEAD/EXPIRED'
+            THEN 'Y'
+        ELSE 'N'
+        END AS ICUSTAY_EXPIRE_FLAG
+FROM icustays ie
+INNER JOIN patients pat
+ON ie.subject_id = pat.subject_id
+INNER JOIN admissions adm
+ON ie.hadm_id = adm.hadm_id;
+
+// Cypher (unmodified db)
+// Clauses: 31
+// Runtime: 195 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime, adm.hospital_expire_flag as hospital_expire_flag,
+adm.discharge_location AS discharge_location, adm.dischtime AS dischtime
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group,
+CASE
+        WHEN hospital_expire_flag = 1
+                THEN 'Y'
+        ELSE 'N'
+        END AS hospital_expire_flag,
+CASE
+        WHEN deathtime > intime 
+                AND deathtime < outtime
+                THEN 'Y'
+        // sometimes there are typographical errors in the death date, so check before intime
+        WHEN deathtime <= intime
+                THEN 'Y'
+        WHEN dischtime <= outtime
+                AND discharge_location = 'DEAD/EXPIRED'
+                THEN 'Y'
+        ELSE 'N'
+        END AS icustay_expire_flag;
+
+// Cypher (modified db)
+// Clauses: 31
+// Runtime: 178 ms
+MATCH (adm:Admissions)-[:ShareHADMID]-(icu:ICU_Stays)-[r:ShareSubjectID]-(pat:Patients)
+UNWIND(icu.intime) AS intime
+UNWIND(pat.dob) AS dob
+UNWIND(adm.admittime) AS admittime
+WITH duration.between(dob, intime).years AS age, duration.between(admittime, intime).days AS preiculos_days,
+icu.subject_id AS subject_id, icu.hadm_id AS hadm_id, icu.icustay_id AS icustay_id, icu.intime AS intime, 
+icu.outtime AS outtime, adm.deathtime AS deathtime, adm.hospital_expire_flag as hospital_expire_flag,
+adm.discharge_location AS discharge_location, adm.dischtime AS dischtime
+RETURN subject_id, hadm_id, icustay_id, intime, outtime, deathtime, age, preiculos_days,
+CASE 
+        WHEN age <= 1
+                THEN 'neonate'
+        WHEN age <= 14
+                THEN 'middle'
+        WHEN age > 100
+                THEN '> 89'
+        ELSE 'adult' 
+        END AS icustay_age_group,
+CASE
+        WHEN hospital_expire_flag = 1
+                THEN 'Y'
+        ELSE 'N'
+        END AS hospital_expire_flag,
+CASE
+        WHEN deathtime > intime 
+                AND deathtime < outtime
+                THEN 'Y'
+        // sometimes there are typographical errors in the death date, so check before intime
+        WHEN deathtime <= intime
+                THEN 'Y'
+        WHEN dischtime <= outtime
+                AND discharge_location = 'DEAD/EXPIRED'
+                THEN 'Y'
+        ELSE 'N'
+        END AS icustay_expire_flag;
+
+// Show Patient 129273’s  diagnosis
+
+// SQL
+// Clauses: 7
+// Runtime: 251 ms
+SELECT *
+FROM diagnoses_icd dia
+INNER JOIN admissions adm
+ON dia.hadm_id = adm.hadm_id
+AND dia.hadm_id = 129273
+INNER JOIN d_icd_diagnoses dicd
+ON dia.icd9_code = dicd.icd9_code;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 57 ms
+MATCH (adm:Admissions {hadm_id: 129273})-[r:ShareHADMID]-(dia:Diagnoses_ICD)-[r2:ShareICD9Code]-(dicd:D_ICD_Diagnoses)
+RETURN adm, r, dia, r2, dicd;
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 39 ms
+MATCH (adm:Admissions {hadm_id: 129273})-[r:DiagnosedWith]-(dicd:D_ICD_Diagnoses)
+RETURN adm, r, dicd;
+
+// Show all the patients diagnosed with Hypertension NOS
+
+// SQL
+// Clauses: 7
+// Runtime: 158 ms
+SELECT *
+FROM diagnoses_icd dia
+INNER JOIN admissions adm
+ON dia.hadm_id = adm.hadm_id
+AND dia.icd9_code = '4019'
+INNER JOIN d_icd_diagnoses dicd
+ON dia.icd9_code = dicd.icd9_code;
+
+// Cypher (unmodified db)
+// Clauses: 2
+// Runtime: 38 ms
+MATCH (adm:Admissions)-[r:ShareHADMID]-(dia:Diagnoses_ICD {icd9_code: '4019'})-[r2:ShareICD9Code]-(dicd:D_ICD_Diagnoses)
+RETURN adm, r, dia, r2, dicd
+
+// Cypher (modified db)
+// Clauses: 2
+// Runtime: 21 ms
+MATCH (adm:Admissions)-[r:DiagnosedWith]-(dicd:D_ICD_Diagnoses {icd9_code: '4019'})
+RETURN adm, r, dicd;
