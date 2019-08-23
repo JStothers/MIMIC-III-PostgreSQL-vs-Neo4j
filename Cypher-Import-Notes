@@ -490,7 +490,7 @@ RETURN adm, mic",
 RETURN adm, r, mic", {batchSize:1000, parallel:true});
 
 // Create a relationship where HADM_ID is shared between Admissions and Note_Events
-// Error in csv for sample set
+// Error in CSV for sample set
 CALL apoc.periodic.iterate(
 "MATCH (adm:Admissions)
 WITH adm
@@ -613,7 +613,7 @@ RETURN car, inpm",
 RETURN car, r, inpm", {batchSize:1000, parallel:true});
 
 // Create a relationship where CGID is shared between Caregivers and Note_Events
-// Error in csv for sample set
+// Error in CSV for sample set
 CALL apoc.periodic.iterate(
 "MATCH (car:Caregivers)
 WITH car
@@ -876,6 +876,7 @@ RETURN pat, adm",
 RETURN pat, r, adm", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Callout
+// 1306 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -886,6 +887,7 @@ RETURN pat, cal",
 RETURN pat, r, cal", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Chart_Events
+// 18103 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -896,6 +898,7 @@ RETURN pat, cha",
 RETURN pat, r, cha", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and CPT_Events
+// 198 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -906,6 +909,7 @@ RETURN pat, cpt",
 RETURN pat, r, cpt", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Datetime_Events
+// 540 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -916,6 +920,7 @@ RETURN pat, dat",
 RETURN pat, r, dat", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Diagnoses_ICD
+// 118 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -926,6 +931,7 @@ RETURN pat, dia",
 RETURN pat, r, dia", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and DRG_Codes
+// 86 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -936,6 +942,7 @@ RETURN pat, drg",
 RETURN pat, r, drg", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and ICU_Stays
+// 114 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -946,6 +953,7 @@ RETURN pat, icu",
 RETURN pat, r, icu", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Input_Events_CV
+// 1307 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -956,6 +964,7 @@ RETURN pat, inpc",
 RETURN pat, r, inpc", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Input_Events_MV
+// 398 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -966,6 +975,7 @@ RETURN pat, inpm",
 RETURN pat, r, inpm", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Lab_Events
+// 1246 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -976,6 +986,7 @@ RETURN pat, lab",
 RETURN pat, r, lab", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Microbiology_Events
+// 116 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -997,6 +1008,7 @@ RETURN pat, not",
 RETURN pat, r, not", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Output_Events
+// 372 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -1007,16 +1019,18 @@ RETURN pat, out",
 RETURN pat, r, out", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Prescriptions
+// 250 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
-MATCH (pre:Prescriptionss)
+MATCH (pre:Prescriptions)
 WHERE pre.subject_id = pat.subject_id
 RETURN pat, pre",
 "MERGE(pat)-[r:ShareSubjectID]-(pre)
 RETURN pat, r, pre", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Procedure_Events_MV
+// 101 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -1027,6 +1041,7 @@ RETURN pat, prom",
 RETURN pat, r, prom", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Procedures_ICD
+// 64 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -1037,6 +1052,7 @@ RETURN pat, proi",
 RETURN pat, r, proi", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Services
+// 72 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
@@ -1047,6 +1063,7 @@ RETURN pat, ser",
 RETURN pat, r, ser", {batchSize:1000, parallel:true});
 
 // Create a relationship where subject_id is shared between Patients and Transfers
+// 105 ms
 CALL apoc.periodic.iterate(
 "MATCH (pat:Patients)
 WITH pat
