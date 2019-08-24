@@ -1,5 +1,5 @@
-// Instructions to create a Neo4j MIMIC-III database. Operation times cited are approximations and will vary
-// between machines. The dataset must first be downloaded from the MIMIC-III Critical Care Database and placed in your
+// Instructions to create a Neo4j 100 patient sample set MIMIC-III database. Operation times cited are approximations and will vary
+// between computers. The dataset must first be downloaded from the MIMIC-III Critical Care Database and placed in your
 // Neo4j project import folder.
 // https://mimic.physionet.org/about/mimic/
 
@@ -1096,6 +1096,7 @@ ON CREATE SET pr.seq_num = pro.seq_num, pr.subject_id = pro.subject_id
 RETURN adm, pr, dpro", {batchSize:1000, parallel:true})
 
 // Create relationship between Admissions and D_Lab_Items, removing the necessity for the join table Lab_Events
+// 40767933 ms
 CALL apoc.periodic.iterate(
 "MATCH (adm:Admissions), (lab: Lab_Events), (dlab: D_Lab_Items) 
 WHERE (adm:Admissions)-[:ShareHADMID]-(lab:Lab_Events)-[:ShareItemID]-(dlab:D_Lab_Items)
@@ -1115,5 +1116,6 @@ DETACH DELETE dia;
 MATCH (pro:Procedures_ICD)
 DETACH DELETE pro;
 
+// 1136 ms
 MATCH (lab: Lab_Events)
 DETACH DELETE lab;
