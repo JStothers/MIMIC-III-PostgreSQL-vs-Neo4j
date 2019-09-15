@@ -11,9 +11,9 @@
 // Then click "Install" in the APOC box.
 
 // ---Neo4j Import CSV---
-// Create labels for each CSV file and nodes for each column. Change the datatype to integer, float or datetime 
-// when appropriate. Convert the CSV datetime into ISO 8601 datetime format that is compliant with Cypher. 
-// Create a new label for Neo4j import time. Use periodic commit to avoid overloading the computer memory.
+// Use these commands to create labels for each CSV file and nodes for each column, and change the datatype to integer, 
+// float or datetime when appropriate. The CSV datetime is converted into ISO 8601 datetime format that is compliant with 
+// Cypher, and a new label is created for Neo4j import time. Use periodic commit to avoid overloading the computer memory.
 // Datetime formatting fix found at: https://community.neo4j.com/t/datetime-issue-import-data-from-sql-server/1400/6
 
 // 1244 ms
